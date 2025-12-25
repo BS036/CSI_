@@ -666,9 +666,10 @@ body {
 .goal {
   position: relative;
   padding-left: 60px;
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  opacity: 0;
+  transform: translateX(60px);
+  transition: opacity 0.6s cubic-bezier(.2,.9,.2,1), transform 0.6s cubic-bezier(.2,.9,.2,1);
+  will-change: transform, opacity;
 }
 
 .goal.animate {
