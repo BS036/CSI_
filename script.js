@@ -345,13 +345,28 @@ const countries = [
 
 const carouselTracks = document.querySelectorAll(".carousel-track");
 
+/**
+ * Improved createFlags:
+ * - Partition the countries list across tracks (round-robin) so each track holds a unique subset.
+ * - Duplicate each subset for smooth looping.
+ * - Apply a negative animation-delay per track to offset the phase and avoid vertical alignments.
+ */
 function createFlags() {
-  carouselTracks.forEach((track) => {
+  const trackCount = carouselTracks.length;
+  const animationDurationSeconds = 60; // should match CSS @keyframes duration (currently 60s)
+  carouselTracks.forEach((track, trackIndex) => {
     // Clear any existing content
     track.innerHTML = '';
-    for (let i = 0; i < 2; i++) {
-      // duplicate list for smooth loop
-      countries.forEach((country) => {
+
+    // Partition countries round-robin so each track gets unique flags
+    const subset = countries.filter((_, i) => (i % trackCount) === trackIndex);
+
+    // Fallback: if subset is empty for any reason, rotate the full list by an offset
+    const items = (subset.length > 0) ? subset : countries.slice(trackIndex).concat(countries.slice(0, trackIndex));
+
+    // Duplicate the items to help create a seamless loop (two passes)
+    for (let pass = 0; pass < 2; pass++) {
+      items.forEach((country) => {
         // Create wrapper div for flag and tooltip
         const flagItem = document.createElement("div");
         flagItem.className = "flag-item";
@@ -373,6 +388,15 @@ function createFlags() {
         track.appendChild(flagItem);
       });
     }
+
+    // Prevent perfect vertical alignment between rows by offsetting animation phase.
+    // Use negative delay so animation starts part-way through (as if it has been running).
+    const phaseOffsetSeconds = (trackIndex * animationDurationSeconds) / trackCount;
+    track.style.animationDuration = `${animationDurationSeconds}s`;
+    track.style.animationDelay = `-${phaseOffsetSeconds}s`;
+
+    // Also set will-change for smoother animations
+    track.style.willChange = 'transform';
   });
 }
 
@@ -809,7 +833,7 @@ loadMedia("news");
     }
     const body = document.createElement('div'); body.className = 'media-card-body';
     if (item.date) { const t = document.createElement('time'); t.className = 'media-card-date'; t.textContent = item.date; body.appendChild(t); }
-    if (item.title) { const h = document.createElement('h3'); h.className = 'media-card-title'; const a = document.createElement('a'); a.href = item.url || '#'; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = item.title; h.appendChild(a); body.appendChild(h); }
+    if (item.title) { const h = document.createElement('h3'); h.className = 'media-card-title'; const a = document.createElement('a'); a.href = item.url || '#'; a.target = '_blank'; a.rel = 'noopener [...]
     if (item.excerpt) { const p = document.createElement('p'); p.className = 'media-card-excerpt'; p.textContent = item.excerpt; body.appendChild(p); }
     if (item.source) { const m = document.createElement('div'); m.className = 'media-card-meta'; m.textContent = item.source; body.appendChild(m); }
     card.appendChild(body); return card;
@@ -839,15 +863,15 @@ loadMedia("news");
     const dots = Array.from(s.querySelectorAll('.slider-dot'));
     let idx = 0; let visible = 1;
     function calcVisible() { const w = window.innerWidth; if (w >= 1200) visible = 3; else if (w >= 900) visible = 2; else visible = 1; }
-    function layout() { const vp = s.querySelector('.slider-viewport'); const w = vp.clientWidth; calcVisible(); items.forEach(it => it.style.width = (w / visible) + 'px'); track.style.width = (items.length * 100 / visible) + '%'; update(); }
-    function update() { const percent = (idx * 100) / visible; track.style.transform = 'translateX(-' + percent + '%)'; dots.forEach(d => d.classList.remove('active')); if (dots[idx]) dots[idx].classList.add('active'); prev.disabled = idx === 0; next.disabled = idx >= items.length - visible; }
+    function layout() { const vp = s.querySelector('.slider-viewport'); const w = vp.clientWidth; calcVisible(); items.forEach(it => it.style.width = (w / visible) + 'px'); track.style.width = (items.[...]
+    function update() { const percent = (idx * 100) / visible; track.style.transform = 'translateX(-' + percent + '%)'; dots.forEach(d => d.classList.remove('active')); if (dots[idx]) dots[idx].classL[...]
     prev.addEventListener('click', () => { idx = Math.max(0, idx - 1); update(); });
     next.addEventListener('click', () => { idx = Math.min(items.length - visible, idx + 1); update(); });
     dots.forEach(d => d.addEventListener('click', e => { idx = Number(e.currentTarget.dataset.index); update(); }));
     // simple swipe
     let startX = 0, down = false;
     track.addEventListener('pointerdown', e => { down = true; startX = e.clientX; track.setPointerCapture(e.pointerId); track.style.transition = 'none'; });
-    track.addEventListener('pointerup', e => { if (!down) return; down = false; track.style.transition = ''; const dx = e.clientX - startX; if (dx > 40) prev.click(); else if (dx < -40) next.click(); });
+    track.addEventListener('pointerup', e => { if (!down) return; down = false; track.style.transition = ''; const dx = e.clientX - startX; if (dx > 40) prev.click(); else if (dx < -40) next.click(); [...]
     track.addEventListener('pointercancel', () => { down = false; track.style.transition = ''; });
     window.addEventListener('resize', layout); layout();
   }
