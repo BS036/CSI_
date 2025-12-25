@@ -402,6 +402,40 @@ function createFlags() {
 
 createFlags();
 
+// Goal Section Sequential Animation (updated to animate on each enter/exit)
+document.addEventListener('DOMContentLoaded', () => {
+  const goals = document.querySelectorAll('.goal');
+
+  const goalObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const goal = entry.target;
+
+      // Get the delay based on step class
+      let delay = 0;
+      if (goal.classList.contains('step-2')) delay = 300;
+      if (goal.classList.contains('step-3')) delay = 600;
+
+      if (entry.isIntersecting) {
+        // Add the animate class after the configured delay so they come in staggered
+        goal._goalTimeout = setTimeout(() => {
+          goal.classList.add('animate');
+        }, delay);
+      } else {
+        // If leaving viewport, cancel any pending timeout and remove animate so it can replay later
+        if (goal._goalTimeout) {
+          clearTimeout(goal._goalTimeout);
+          delete goal._goalTimeout;
+        }
+        goal.classList.remove('animate');
+      }
+    });
+  }, {
+    threshold: 0.25,
+    rootMargin: '0px 0px -10px 0px'
+  });
+
+  goals.forEach(goal => goalObserver.observe(goal));
+});
 
 // Count up animation
 function animateCountUp(el, target) {
